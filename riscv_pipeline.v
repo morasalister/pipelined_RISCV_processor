@@ -1,1 +1,44 @@
-module riscv_pipeline(input clk,reset,output [31:0] dbg_x3,dbg_x4,dbg_x5,dbg_x6,dbg_x7); reg [31:0] pc; wire [31:0] ins; imem IM(pc,ins); wire [6:0] op=ins[6:0]; wire [2:0] f3=ins[14:12]; wire [4:0] rs1=ins[19:15],rs2=ins[24:20],rd=ins[11:7]; wire [31:0] a,b; regfile RF(clk,wb_we,wb_rd,wb_val,rs1,rs2,a,b); wire rw,mr,mw,asrc,br,jp; wire [1:0] wb; wire [3:0] ao; control CU(op,f3,ins[30],rw,mr,mw,asrc,br,jp,wb,ao); wire [31:0] ii={{20{ins[31]}},ins[31:20]},is={{20{ins[31]}},ins[31:25],ins[11:7]},ib={{19{ins[31]}},ins[31],ins[7],ins[30:25],ins[11:8],1'b0},ij={{11{ins[31]}},ins[31],ins[19:12],ins[20],ins[30:21],1'b0},iu={ins[31:12],12'b0}; reg [31:0] d1,d2,imm,ep; reg [4:0] er; reg erw,emr,emw; reg [1:0] ewb; reg [31:0] ma,md; reg [4:0] mrn; reg m_rw; reg [1:0] mwb; wire [31:0] ay; wire z; alu AL(d1,asrc?imm:d2,ao,ay,z); wire [31:0] dm; dmem DM(clk,emw,ma,md,dm); wire wb_we=m_rw; wire [4:0] wb_rd=mrn; wire [31:0] wb_val=(mwb==1)?dm:ma; assign dbg_x3=RF.r[3];assign dbg_x4=RF.r[4];assign dbg_x5=RF.r[5];assign dbg_x6=RF.r[6];assign dbg_x7=RF.r[7]; always @(posedge clk) begin if(reset) begin pc<=0; end else begin if(m_rw&&mrn!=0) RF.r[mrn]<=wb_val; ma<=ay;md<=d2;mrn<=er;m_rw<=erw;mwb<=ewb; er<=rd;erw<=rw;emr<=mr;emw<=mw;ewb<=wb; d1<=a;d2<=b;imm<=mw?is:(br?ib:(jp?ij:(op==7'b0110111?iu:ii))); ep<=pc; pc<=pc+4; if(br&&z)pc<=pc+imm; end end endmodule
+module riscv_pipeline(input clk,reset,output [31:0] dbg_x3,dbg_x4,dbg_x5,dbg_x6,dbg_x7); 
+  reg [31:0] pc; 
+  wire [31:0] ins; 
+  imem IM(pc,ins); 
+  wire [6:0] op=ins[6:0]; 
+  wire [2:0] f3=ins[14:12]; 
+  wire [4:0] rs1=ins[19:15],rs2=ins[24:20],rd=ins[11:7]; 
+  wire [31:0] a,b; 
+  regfile RF(clk,wb_we,wb_rd,wb_val,rs1,rs2,a,b); 
+  wire rw,mr,mw,asrc,br,jp; 
+  wire [1:0] wb; 
+  wire [3:0] ao; 
+  control CU(op,f3,ins[30],rw,mr,mw,asrc,br,jp,wb,ao); 
+  wire [31:0] ii={{20{ins[31]}},ins[31:20]},is={{20{ins[31]}},ins[31:25],ins[11:7]},ib={{19{ins[31]}},ins[31],ins[7],ins[30:25],ins[11:8],1'b0},ij={{11{ins[31]}},ins[31],ins[19:12],ins[20],ins[30:21],1'b0},iu={ins[31:12],12'b0}; 
+  reg [31:0] d1,d2,imm,ep; 
+  reg [4:0] er; 
+  reg erw,emr,emw; 
+  reg [1:0] ewb; 
+  reg [31:0] ma,md; reg [4:0] mrn; 
+  reg m_rw; reg [1:0] mwb; 
+  wire [31:0] ay; wire z; alu AL(d1,asrc?imm:d2,ao,ay,z); 
+  wire [31:0] dm; 
+  dmem DM(clk,emw,ma,md,dm); 
+  wire wb_we=m_rw; wire [4:0] wb_rd=mrn; 
+  wire [31:0] wb_val=(mwb==1)?dm:ma; 
+  assign dbg_x3=RF.r[3];
+  assign dbg_x4=RF.r[4];
+  assign dbg_x5=RF.r[5];
+  assign dbg_x6=RF.r[6];
+  assign dbg_x7=RF.r[7]; 
+  always @(posedge clk) 
+    begin 
+      if(reset)
+        begin pc<=0; 
+        end 
+      else 
+        begin 
+          if(m_rw&&mrn!=0) 
+            RF.r[mrn]<=wb_val; ma<=ay;md<=d2;mrn<=er;m_rw<=erw;mwb<=ewb; er<=rd;erw<=rw;emr<=mr;emw<=mw;ewb<=wb; d1<=a;d2<=b;imm<=mw?is:(br?ib:(jp?ij:(op==7'b0110111?iu:ii))); ep<=pc; pc<=pc+4; 
+          if(br&&z)
+            pc<=pc+imm; 
+        end 
+    end 
+endmodule
