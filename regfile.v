@@ -1,0 +1,1 @@
+module regfile(input clk,input we,input [4:0] wa,input [31:0] wd,input [4:0] ra1,ra2,output [31:0] rd1,rd2); reg [31:0] r[0:31]; integer i; initial for(i=0;i<32;i=i+1) r[i]=0; always @(posedge clk) if(we&&wa!=0) r[wa]<=wd; assign rd1=(ra1==0)?0:r[ra1]; assign rd2=(ra2==0)?0:r[ra2]; endmodule
